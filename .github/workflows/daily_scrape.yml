@@ -28,7 +28,7 @@ jobs:
         # This action will also add ChromeDriver to the PATH
 
       - name: Run scraper
-        run: python3 -m workday_scraper --file configs/ahmed.txt # Using ahmed.txt as default
+        run: python3 -m workday_scraper --file ahmed.txt # Pass only filename
 
       - name: Commit and push if files changed
         run: |
