@@ -1,0 +1,45 @@
+name: Daily Job Scrape
+
+on:
+  schedule:
+    # Runs every day at 21:00 UTC (adjust as needed)
+    - cron: '0 21 * * *'
+  workflow_dispatch: # Allows manual triggering from the Actions tab
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x' # Or specify your exact Python version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Setup Chrome and ChromeDriver
+        uses: browser-actions/setup-chrome@v1 # Community action to install Chrome
+        # This action will also add ChromeDriver to the PATH
+
+      - name: Run scraper
+        run: python3 -m workday_scraper --file configs/ahmed.txt # Using ahmed.txt as default
+
+      - name: Commit and push if files changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          # Add all potentially changed files. job_ids_dict.pkl is crucial for daily runs.
+          git add rss.xml job_postings.json job_ids_dict.pkl configs/*.txt
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "Daily job scrape update"
+            git push
+          fi 
