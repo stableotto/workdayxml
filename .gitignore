@@ -4,6 +4,6 @@ __pycache__
 venv
 
 # Data
-*.pkl
-*.json
-*.xml
+# *.pkl  # Allow job_ids_dict.pkl
+# *.json # Allow job_postings.json
+# *.xml  # Allow rss.xml
