@@ -12,18 +12,21 @@ def generate_rss(jobs):
     for job_info in jobs:
         job_posting_text = job_info["job_posting_text"].replace("\n", "<br>")
         job_location_text = job_info.get("job_location", "Location not specified")
+        company_name = job_info.get("company", "Company not specified")
         rss += """\
 <item>
     <title><![CDATA[{}]]></title>
     <link><![CDATA[{}]]></link>
     <description><![CDATA[{}]]></description>
     <location><![CDATA[{}]]></location>
+    <company><![CDATA[{}]]></company>
 </item>
 """.format(
             f"{job_info['company']}: {job_info['job_title']}",
             f"{job_info['job_href']}",
             f"{job_posting_text}",
             f"{job_location_text}",
+            f"{company_name}",
         )
 
     rss += "\n</channel>\n</rss>"
