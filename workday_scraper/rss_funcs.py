@@ -10,7 +10,22 @@ def generate_rss(jobs):
 """
 
     for job_info in jobs:
-        job_posting_text = job_info["job_posting_text"].replace("\n", "<br>")
+        # Format title to only include job title
+        job_title_text = job_info.get('job_title', 'Job Title Not Specified')
+
+        # Format description with <p> tags for double newlines and <br /> for single newlines
+        raw_description = job_info.get("job_posting_text", "")
+        paragraphs = raw_description.split('\n\n') # Split by double newline
+        processed_paragraphs = []
+        for para in paragraphs:
+            # Replace single newlines within a paragraph with <br />
+            processed_para = para.strip().replace('\n', '<br />')
+            if processed_para: # Avoid empty <p> tags
+                processed_paragraphs.append(f'<p>{processed_para}</p>')
+        formatted_description = "".join(processed_paragraphs)
+        if not formatted_description: # Fallback if description was empty
+            formatted_description = "<p>No description provided.</p>"
+
         job_location_text = job_info.get("job_location", "Location not specified")
         company_name = job_info.get("company", "Company not specified")
         rss += """\
@@ -22,9 +37,9 @@ def generate_rss(jobs):
     <company><![CDATA[{}]]></company>
 </item>
 """.format(
-            f"{job_info['company']}: {job_info['job_title']}",
+            f"{job_title_text}", # Changed to only job title
             f"{job_info['job_href']}",
-            f"{job_posting_text}",
+            f"{formatted_description}", # Use new formatted description
             f"{job_location_text}",
             f"{company_name}",
         )
