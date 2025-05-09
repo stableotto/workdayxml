@@ -34,13 +34,20 @@ def generate_rss(jobs):
                 for line in section.split('\n'):
                     line = line.strip()
                     if line:
-                        # Remove bullet points or numbers
+                        # Remove bullet points or numbers and format as paragraph
                         clean_line = line.lstrip('•-*1234567890. ')
-                        list_items.append(f'<li>{clean_line}</li>')
+                        # Check if line contains a colon and make text before it bold
+                        if ':' in clean_line:
+                            parts = clean_line.split(':', 1)
+                            clean_line = f'<strong>{parts[0]}</strong>:{parts[1]}'
+                        list_items.append(f'<p>{clean_line}</p>')
                 if list_items:
-                    formatted_sections.append(f'<ul>{"".join(list_items)}</ul>')
+                    formatted_sections.append("".join(list_items))
             else:
-                # Regular paragraph
+                # Regular paragraph - check for colon and make text before it bold
+                if ':' in section:
+                    parts = section.split(':', 1)
+                    section = f'<strong>{parts[0]}</strong>:{parts[1]}'
                 formatted_sections.append(f'<p>{section.replace(chr(10), "<br />")}</p>')
         
         formatted_description = "".join(formatted_sections)
