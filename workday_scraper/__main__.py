@@ -49,10 +49,18 @@ def scrape_job_posting(jobtosend, company, seturl):
             )
             job_posting_text = job_posting_element.text
             driver.close()
+            
+            # Clean the job title by removing company name and any leading/trailing whitespace
+            clean_job_title = job_title
+            if company in job_title:
+                clean_job_title = job_title.replace(company, '').strip()
+            # Remove any remaining colons and clean up whitespace
+            clean_job_title = clean_job_title.replace(':', '').strip()
+            
             job_info = {
                 "company": company,
                 "company_url": seturl,
-                "job_title": job_title,
+                "job_title": clean_job_title,
                 "job_href": job_href,
                 "job_posting_text": job_posting_text,
                 "job_location": job_location_text,
