@@ -47,7 +47,8 @@ def scrape_job_posting(jobtosend, company, seturl):
                     (By.XPATH, '//div[@data-automation-id="job-posting-details"]')
                 )
             )
-            job_posting_text = job_posting_element.text
+            # Get the raw HTML instead of just the text
+            job_posting_html = job_posting_element.get_attribute('outerHTML')
             driver.close()
             
             # Clean the job title by removing company name and any leading/trailing whitespace
@@ -62,7 +63,7 @@ def scrape_job_posting(jobtosend, company, seturl):
                 "company_url": seturl,
                 "job_title": clean_job_title,
                 "job_href": job_href,
-                "job_posting_text": job_posting_text,
+                "job_posting_html": job_posting_html,  # Store HTML instead of text
                 "job_location": job_location_text,
             }
             return job_info
