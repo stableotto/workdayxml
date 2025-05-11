@@ -1,3 +1,34 @@
+import html as html_escape
+from html.parser import HTMLParser
+from html.entities import name2codepoint
+
+class HTMLFormatter(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.indent = 0
+        self.formatted = []
+        self.indent_size = 2
+
+    def handle_starttag(self, tag, attrs):
+        self.formatted.append(' ' * self.indent + f'<{tag}>')
+        self.indent += self.indent_size
+
+    def handle_endtag(self, tag):
+        self.indent -= self.indent_size
+        self.formatted.append(' ' * self.indent + f'</{tag}>')
+
+    def handle_data(self, data):
+        if data.strip():
+            self.formatted.append(' ' * self.indent + data.strip())
+
+    def get_formatted_html(self):
+        return '\n'.join(self.formatted)
+
+def format_html(html_content):
+    formatter = HTMLFormatter()
+    formatter.feed(html_content)
+    return formatter.get_formatted_html()
+
 def generate_rss(jobs):
     rss = """\
 <?xml version="1.0" encoding="UTF-8" ?>
@@ -34,25 +65,22 @@ def generate_rss(jobs):
                 for line in section.split('\n'):
                     line = line.strip()
                     if line:
-                        # Remove bullet points or numbers and format as paragraph
+                        # Remove bullet points or numbers and clean up
                         clean_line = line.lstrip('•-*1234567890. ')
-                        # Check if line contains a colon and make text before it bold
-                        if ':' in clean_line:
-                            parts = clean_line.split(':', 1)
-                            clean_line = f'<strong>{parts[0]}</strong>:{parts[1]}'
-                        list_items.append(f'<p>{clean_line}</p>')
+                        # Add a dash at the start of each line for better readability
+                        list_items.append(f'<li>- {clean_line}</li>')
                 if list_items:
-                    formatted_sections.append("".join(list_items))
+                    formatted_sections.append(f'<ul>{"".join(list_items)}</ul>')
             else:
-                # Regular paragraph - check for colon and make text before it bold
-                if ':' in section:
-                    parts = section.split(':', 1)
-                    section = f'<strong>{parts[0]}</strong>:{parts[1]}'
+                # Regular paragraph
                 formatted_sections.append(f'<p>{section.replace(chr(10), "<br />")}</p>')
         
         formatted_description = "".join(formatted_sections)
         if not formatted_description:
             formatted_description = "<p>No description provided.</p>"
+
+        # Format the HTML content
+        formatted_html = format_html(formatted_description)
 
         job_location_text = job_info.get("job_location", "Location not specified")
         company_name = job_info.get("company", "Company not specified")
@@ -67,7 +95,7 @@ def generate_rss(jobs):
 """.format(
             f"{job_title_text}",
             f"{job_info['job_href']}",
-            f"{formatted_description}",
+            f"{formatted_html}",
             f"{job_location_text}",
             f"{company_name}",
         )
