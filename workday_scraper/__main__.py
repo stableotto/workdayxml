@@ -6,13 +6,91 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import time
-
+from bs4 import BeautifulSoup
 import multiprocessing.dummy as multiprocessing
 import tqdm
 
 from .parse_args import parse_args
 from .rss_funcs import generate_rss
 from .email_funcs import compose_email, send_email
+
+
+def clean_html(html_content):
+    """Clean up the HTML content to remove unnecessary elements and preserve formatting."""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove all SVG elements
+    for svg in soup.find_all('svg'):
+        svg.decompose()
+        
+    # Remove unnecessary nested divs while preserving content
+    for div in soup.find_all('div', recursive=True):
+        if div.find_all('div') and not div.find(['p', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+            div.unwrap()
+    
+    # Clean up empty elements
+    for element in soup.find_all(['div', 'p', 'span']):
+        if not element.get_text(strip=True) and not element.find(['img', 'br']):
+            element.decompose()
+    
+    # Add proper styling
+    job_description_div = soup.new_tag('div')
+    job_description_div['class'] = 'job-description'
+    
+    # Move all content into the job description div
+    for element in soup.body.contents[:]:
+        job_description_div.append(element.extract())
+    
+    soup.body.append(job_description_div)
+    
+    # Convert the cleaned HTML back to a string
+    cleaned_html = str(job_description_div)
+    
+    # Add CSS styles
+    css_styles = """
+        <style>
+            .job-description {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                line-height: 1.6;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .job-description h1, .job-description h2, .job-description h3 {
+                color: #2557a7;
+                margin-top: 1.5em;
+                margin-bottom: 0.5em;
+                font-weight: 600;
+            }
+            .job-description ul, .job-description ol {
+                margin: 1em 0;
+                padding-left: 2em;
+            }
+            .job-description li {
+                margin: 0.5em 0;
+                line-height: 1.6;
+                list-style-type: disc;
+            }
+            .job-description p {
+                margin: 1em 0;
+                line-height: 1.6;
+            }
+            .job-description b, .job-description strong {
+                color: #2557a7;
+                font-weight: 600;
+            }
+            .job-description a {
+                color: #2557a7;
+                text-decoration: none;
+            }
+            .job-description a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    """
+    
+    return f"{css_styles}\n{cleaned_html}"
 
 
 def read_file(file):
@@ -47,8 +125,10 @@ def scrape_job_posting(jobtosend, company, seturl):
                     (By.XPATH, '//div[@data-automation-id="job-posting-details"]')
                 )
             )
-            # Get the raw HTML instead of just the text
+            # Get the raw HTML and clean it
             job_posting_html = job_posting_element.get_attribute('outerHTML')
+            cleaned_html = clean_html(job_posting_html)
+            
             driver.close()
             
             # Clean the job title by removing company name and any leading/trailing whitespace
@@ -63,12 +143,12 @@ def scrape_job_posting(jobtosend, company, seturl):
                 "company_url": seturl,
                 "job_title": clean_job_title,
                 "job_href": job_href,
-                "job_posting_html": job_posting_html,  # Store HTML instead of text
+                "job_posting_html": cleaned_html,  # Store cleaned HTML
                 "job_location": job_location_text,
             }
             return job_info
-        except:
-            print("Failed! Retrying...")
+        except Exception as e:
+            print(f"Failed! Error: {str(e)}")
             max_retries -= 1
             return None
 
