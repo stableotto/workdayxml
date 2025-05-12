@@ -1,3 +1,2 @@
 selenium==4.22.0
 tqdm==4.66.3
-beautifulsoup4
